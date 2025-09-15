@@ -4,11 +4,14 @@ const fs = require('fs-extra');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const allRulesData = require('./rules_data');
+const axios = require('axios');
 
 const app = express();
 const PORT = 5000;
 const DATA_FILE = 'rules.json';
 const USERS_FILE = 'users.json';
+const REQUESTS_FILE = 'requests.json';
+const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1383867565964525799/EmzMadL49Jrs3yMrTUJlH3DxGgS8IWYtjhKWJxTgqOwO8sKW4_pfPt5SRG6gfBkf0_J_';
 
 // Middleware
 app.use(cors());
@@ -18,6 +21,85 @@ app.use(express.static('public'));
 // Система отслеживания пользователей
 let users = new Set();
 let userSessions = new Map(); // sessionId -> { userId, lastSeen, userAgent }
+
+// Система логирования запросов
+let requests = [];
+
+// Загружаем сохраненные запросы
+function loadRequests() {
+    try {
+        if (fs.existsSync(REQUESTS_FILE)) {
+            const data = fs.readFileSync(REQUESTS_FILE, 'utf8');
+            requests = JSON.parse(data);
+            console.log(`📝 Загружено ${requests.length} запросов из логов`);
+        } else {
+            requests = [];
+            console.log('📝 Инициализирован пустой список запросов');
+        }
+    } catch (error) {
+        console.error('❌ Ошибка загрузки запросов:', error);
+        requests = [];
+    }
+}
+
+// Сохраняем запросы
+function saveRequests() {
+    try {
+        fs.writeFileSync(REQUESTS_FILE, JSON.stringify(requests, null, 2));
+        console.log(`💾 Сохранено ${requests.length} запросов`);
+    } catch (error) {
+        console.error('❌ Ошибка сохранения запросов:', error);
+    }
+}
+
+// Отправка в Discord
+async function sendToDiscord(requestData) {
+    try {
+        const embed = {
+            title: "🔍 Новый запрос к анализатору правил",
+            color: 0x00d4ff,
+            fields: [
+                {
+                    name: "👤 Пользователь",
+                    value: `ID: ${requestData.userId || 'Неизвестно'}`,
+                    inline: true
+                },
+                {
+                    name: "❓ Вопрос",
+                    value: requestData.question || 'Не указан',
+                    inline: false
+                },
+                {
+                    name: "📊 Результат",
+                    value: `Найдено правил: ${requestData.rulesFound || 0}`,
+                    inline: true
+                },
+                {
+                    name: "⏱️ Время",
+                    value: new Date(requestData.timestamp).toLocaleString('ru-RU'),
+                    inline: true
+                },
+                {
+                    name: "🌐 IP",
+                    value: requestData.ip || 'Неизвестно',
+                    inline: true
+                }
+            ],
+            footer: {
+                text: "Majestic RP - Анализатор правил"
+            },
+            timestamp: new Date().toISOString()
+        };
+
+        await axios.post(DISCORD_WEBHOOK_URL, {
+            embeds: [embed]
+        });
+        
+        console.log('📤 Запрос отправлен в Discord');
+    } catch (error) {
+        console.error('❌ Ошибка отправки в Discord:', error);
+    }
+}
 
 // Загружаем сохраненных пользователей (только в памяти на Vercel)
 function loadUsers() {
@@ -357,6 +439,11 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Страница запросов
+app.get('/zaprosi', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'zaprosi.html'));
+});
+
 // Статус системы
 app.get('/api/status', (req, res) => {
     console.log(`📊 Запрос статуса системы. Правил в памяти: ${rules.length}`);
@@ -409,8 +496,11 @@ app.get('/api/users/stats', (req, res) => {
 });
 
 // Поиск по правилам
-app.post('/api/ask', (req, res) => {
+app.post('/api/ask', async (req, res) => {
     const { question } = req.body;
+    const sessionId = req.headers['x-session-id'] || req.query.sessionId;
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    const ip = req.ip || req.connection.remoteAddress || 'Unknown';
     
     if (!question || question.trim() === '') {
         return res.status(400).json({
@@ -427,6 +517,38 @@ app.post('/api/ask', (req, res) => {
         const processingTime = Date.now() - startTime;
         
         console.log(`✅ Найдено ${relevantRules.length} правил за ${processingTime}мс`);
+        
+        // Получаем ID пользователя
+        let userId = 'Неизвестно';
+        if (sessionId && userSessions.has(sessionId)) {
+            userId = userSessions.get(sessionId).userId;
+        }
+        
+        // Создаем запись о запросе
+        const requestData = {
+            id: uuidv4(),
+            timestamp: new Date().toISOString(),
+            question: question,
+            userId: userId,
+            sessionId: sessionId,
+            userAgent: userAgent,
+            ip: ip,
+            rulesFound: relevantRules.length,
+            processingTime: processingTime,
+            rules: relevantRules.map(rule => ({
+                id: rule.id,
+                point: rule.point,
+                title: rule.title,
+                category: rule.category
+            }))
+        };
+        
+        // Добавляем в лог
+        requests.push(requestData);
+        saveRequests();
+        
+        // Отправляем в Discord
+        await sendToDiscord(requestData);
         
         res.json({
             success: true,
@@ -480,10 +602,64 @@ app.get('/api/categories', (req, res) => {
     });
 });
 
+// Получить все запросы
+app.get('/api/zaprosi', (req, res) => {
+    const { limit = 50, offset = 0 } = req.query;
+    
+    const limitedRequests = requests
+        .slice(parseInt(offset), parseInt(offset) + parseInt(limit))
+        .reverse(); // Показываем последние запросы первыми
+    
+    res.json({
+        success: true,
+        requests: limitedRequests,
+        total: requests.length,
+        limit: parseInt(limit),
+        offset: parseInt(offset)
+    });
+});
+
+// Получить статистику запросов
+app.get('/api/zaprosi/stats', (req, res) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    
+    const todayRequests = requests.filter(req => new Date(req.timestamp) >= today);
+    const weekRequests = requests.filter(req => new Date(req.timestamp) >= weekAgo);
+    
+    // Топ категорий
+    const categoryStats = {};
+    requests.forEach(req => {
+        req.rules.forEach(rule => {
+            categoryStats[rule.category] = (categoryStats[rule.category] || 0) + 1;
+        });
+    });
+    
+    const topCategories = Object.entries(categoryStats)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 5)
+        .map(([category, count]) => ({ category, count }));
+    
+    res.json({
+        success: true,
+        stats: {
+            total: requests.length,
+            today: todayRequests.length,
+            week: weekRequests.length,
+            topCategories: topCategories,
+            averageProcessingTime: requests.length > 0 
+                ? Math.round(requests.reduce((sum, req) => sum + req.processingTime, 0) / requests.length)
+                : 0
+        }
+    });
+});
+
 
 // Инициализация
 loadRules();
 loadUsers();
+loadRequests();
 
 // Запуск сервера
 app.listen(PORT, () => {
