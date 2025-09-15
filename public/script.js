@@ -7,8 +7,18 @@ let sessionId = null;
 // Генерация уникального ID сессии
 function generateSessionId() {
     if (!sessionId) {
-        sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('majestic_session_id', sessionId);
+        // Сначала пытаемся загрузить существующий ID из localStorage
+        const savedSessionId = localStorage.getItem('majestic_session_id');
+        
+        if (savedSessionId) {
+            sessionId = savedSessionId;
+            console.log('🔄 Восстановлен существующий session ID:', sessionId.substring(0, 20) + '...');
+        } else {
+            // Создаем новый ID только если его нет
+            sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('majestic_session_id', sessionId);
+            console.log('🆕 Создан новый session ID:', sessionId.substring(0, 20) + '...');
+        }
     }
     return sessionId;
 }

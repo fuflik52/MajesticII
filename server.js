@@ -53,6 +53,7 @@ app.use((req, res, next) => {
             const session = userSessions.get(sessionId);
             session.lastSeen = Date.now();
             session.userAgent = userAgent;
+            // Не логируем каждый запрос, только при обновлении статистики
         } else {
             // Новый пользователь
             const userId = uuidv4();
@@ -63,7 +64,7 @@ app.use((req, res, next) => {
                 userAgent: userAgent
             });
             saveUsers();
-            console.log(`👤 Новый пользователь: ${userId.substring(0, 8)}...`);
+            console.log(`👤 Новый пользователь #${users.size}: ${userId.substring(0, 8)}...`);
         }
     }
     
