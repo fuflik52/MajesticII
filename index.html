@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Анализатор правил Majestic RP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .status-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 4px solid #28a745;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .input-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .question-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1.1em;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            outline: none;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .question-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .ask-button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ask-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .ask-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .examples {
+            margin-bottom: 30px;
+        }
+
+        .examples h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .example-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .example-btn {
+            background: #e9ecef;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #495057;
+            font-size: 0.9em;
+        }
+
+        .example-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .answer-section {
+            min-height: 200px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 30px;
+            margin-top: 30px;
+            display: none;
+        }
+
+        .answer-section.show {
+            display: block;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .answer-content {
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .answer-content h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .rule-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .rule-number {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .rule-relevance {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            float: right;
+        }
+
+        .rule-content {
+            margin-top: 10px;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        .punishment {
+            margin-top: 10px;
+            padding: 10px;
+            background: linear-gradient(135deg, #fff2f2, #ffe6e6);
+            border-left: 4px solid #dc3545;
+            border-radius: 5px;
+        }
+
+        .punishment-text {
+            color: #721c24;
+            font-weight: 500;
+        }
+
+        .punishment-info {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 8px 12px;
+            border-radius: 5px;
+            border-left: 3px solid #dc3545;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e9ecef;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #dc3545;
+        }
+
+        .footer {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .main-content {
+                padding: 20px;
+            }
+
+            .example-buttons {
+                flex-direction: column;
+            }
+
+            .example-btn {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Анализатор правил Majestic RP</h1>
+            <p>Умный помощник по правилам государственных организаций</p>
+        </div>
+
+        <div class="main-content">
+            <div class="status-section">
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span id="status-text">Система готова к работе</span>
+                </div>
+            </div>
+
+            <div class="input-section">
+                <div class="input-container">
+                    <input 
+                        type="text" 
+                        id="question-input" 
+                        class="question-input" 
+                        placeholder="Задайте вопрос о правилах (например: 'Какие требования к форме одежды?')"
+                        onkeypress="handleKeyPress(event)"
+                    >
+                </div>
+                <button id="ask-button" class="ask-button" onclick="askQuestion()">
+                    <span>🤖</span>
+                    Задать вопрос
+                </button>
+            </div>
+
+            <div class="examples">
+                <h3>💡 Примеры вопросов:</h3>
+                <div class="example-buttons">
+                    <button class="example-btn" onclick="setQuestion('Какие требования к форме одежды?')">
+                        Требования к форме одежды
+                    </button>
+                    <button class="example-btn" onclick="setQuestion('Что говорится о дисциплине сотрудников?')">
+                        Дисциплина сотрудников
+                    </button>
+                    <button class="example-btn" onclick="setQuestion('Какие обязанности у руководства?')">
+                        Обязанности руководства
+                    </button>
+                    <button class="example-btn" onclick="setQuestion('Что запрещено руководящему составу?')">
+                        Запреты для руководства
+                    </button>
+                    <button class="example-btn" onclick="setQuestion('Как проводятся собрания?')">
+                        Проведение собраний
+                    </button>
+                    <button class="example-btn" onclick="setQuestion('Правила взаимодействия с гражданами')">
+                        Взаимодействие с гражданами
+                    </button>
+                </div>
+            </div>
+
+            <div id="answer-section" class="answer-section">
+                <div id="answer-content" class="answer-content">
+                    <!-- Ответы будут отображаться здесь -->
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>© 2024 Анализатор правил Majestic RP | Используются бесплатные локальные ИИ модели</p>
+        </div>
+    </div>
+
+    <script>
+        let isLoading = false;
+
+        function setQuestion(question) {
+            document.getElementById('question-input').value = question;
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !isLoading) {
+                askQuestion();
+            }
+        }
+
+        async function askQuestion() {
+            if (isLoading) return;
+
+            const input = document.getElementById('question-input');
+            const question = input.value.trim();
+            
+            if (!question) {
+                alert('Пожалуйста, введите вопрос');
+                return;
+            }
+
+            isLoading = true;
+            updateUI(true);
+
+            try {
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question: question }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayAnswer(data.answer, question);
+                } else {
+                    displayError(data.error || 'Произошла ошибка при обработке вопроса');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                displayError('Ошибка соединения с сервером');
+            } finally {
+                isLoading = false;
+                updateUI(false);
+            }
+        }
+
+        function updateUI(loading) {
+            const button = document.getElementById('ask-button');
+            const statusText = document.getElementById('status-text');
+
+            if (loading) {
+                button.disabled = true;
+                button.innerHTML = '<div class="spinner"></div> Обрабатываю вопрос...';
+                statusText.textContent = 'Анализирую правила...';
+            } else {
+                button.disabled = false;
+                button.innerHTML = '<span>🤖</span> Задать вопрос';
+                statusText.textContent = 'Система готова к работе';
+            }
+        }
+
+        function displayAnswer(answer, question) {
+            const answerSection = document.getElementById('answer-section');
+            const answerContent = document.getElementById('answer-content');
+
+            // Парсим ответ и форматируем его
+            const formattedAnswer = formatAnswer(answer, question);
+            
+            answerContent.innerHTML = formattedAnswer;
+            answerSection.classList.add('show');
+            
+            // Плавная прокрутка к ответу
+            answerSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function formatAnswer(answer, question) {
+            let formatted = `<h4>📋 Ответ на вопрос: "${question}"</h4>`;
+            
+            // Разбиваем ответ на части
+            const lines = answer.split('\n');
+            let currentRule = null;
+            
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+                
+                // Проверяем, является ли строка заголовком пункта правил
+                if (line.includes('Пункт') && line.includes('релевантность:')) {
+                    if (currentRule) {
+                        formatted += `</div>`;
+                    }
+                    
+                    const match = line.match(/Пункт\s+([^(]+)\s*\(релевантность:\s*(\d+)%\)/);
+                    if (match) {
+                        const ruleNum = match[1].trim();
+                        const relevance = match[2];
+                        
+                        formatted += `<div class="rule-item">
+                            <span class="rule-number">Пункт ${ruleNum}</span>
+                            <span class="rule-relevance">${relevance}%</span>`;
+                        currentRule = ruleNum;
+                    }
+                } else if (line.startsWith('📝')) {
+                    // Текст правила
+                    const content = line.replace(/^📝\s*/, '').replace(/\*\*Правило:\*\*\s*/, '');
+                    if (currentRule) {
+                        formatted += `<div class="rule-content">${content}</div>`;
+                    } else {
+                        formatted += `<p>${content}</p>`;
+                    }
+                } else if (line.startsWith('⚖️')) {
+                    // Наказание
+                    const punishment = line.replace(/^⚖️\s*/, '').replace(/\*\*Наказание:\*\*\s*/, '');
+                    if (currentRule) {
+                        formatted += `<div class="punishment">
+                            <strong>⚖️ Наказание:</strong> <span class="punishment-text">${punishment}</span>
+                        </div>`;
+                    } else {
+                        formatted += `<p class="punishment-info">${line}</p>`;
+                    }
+                } else if (line.startsWith('•')) {
+                    // Дополнительный пункт
+                    const content = line.replace(/^•\s*/, '');
+                    formatted += `<p style="margin-left: 20px;">• ${content}</p>`;
+                } else if (line.includes('найдено') && line.includes('пунктов')) {
+                    // Итоговая информация
+                    formatted += `<p style="margin-top: 20px; font-style: italic; color: #666;">${line}</p>`;
+                } else if (line.length > 10) {
+                    // Обычный текст
+                    formatted += `<p>${line}</p>`;
+                }
+            }
+            
+            if (currentRule) {
+                formatted += `</div>`;
+            }
+            
+            return formatted;
+        }
+
+        function displayError(error) {
+            const answerSection = document.getElementById('answer-section');
+            const answerContent = document.getElementById('answer-content');
+            
+            answerContent.innerHTML = `
+                <div class="error">
+                    <h4>❌ Ошибка</h4>
+                    <p>${error}</p>
+                </div>
+            `;
+            
+            answerSection.classList.add('show');
+            answerSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Проверяем доступность сервера при загрузке страницы
+        window.addEventListener('load', async function() {
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+                
+                if (data.status === 'ready') {
+                    document.getElementById('status-text').textContent = 
+                        `Система готова | Загружено ${data.rules_count} правил`;
+                } else {
+                    document.getElementById('status-text').textContent = 'Система инициализируется...';
+                }
+            } catch (error) {
+                document.getElementById('status-text').textContent = 'Сервер недоступен';
+                console.error('Server status check failed:', error);
+            }
+        });
+    </script>
+</body>
+</html>

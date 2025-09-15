@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Анализатор правил Majestic RP - Dark Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --accent: #58a6ff;
+            --accent-hover: #79c0ff;
+            --success: #238636;
+            --warning: #f85149;
+            --border: #30363d;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .search-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 16px var(--shadow);
+        }
+
+        .panel-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(88, 166, 255, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-success:hover {
+            background: #2ea043;
+        }
+
+        .btn-danger {
+            background: var(--warning);
+        }
+
+        .btn-danger:hover {
+            background: #ff6b6b;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .examples {
+            margin-bottom: 20px;
+        }
+
+        .examples h4 {
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .example-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .example-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .example-btn:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .results-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 16px var(--shadow);
+            display: none;
+        }
+
+        .results-section.show {
+            display: block;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .rule-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .rule-item:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .rule-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .rule-number {
+            background: var(--accent);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .rule-relevance {
+            background: var(--success);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-left: auto;
+        }
+
+        .rule-category {
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-left: 8px;
+        }
+
+        .rule-content {
+            margin: 12px 0;
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+
+        .rule-punishment {
+            background: linear-gradient(135deg, rgba(248, 81, 73, 0.1), rgba(248, 81, 73, 0.05));
+            border-left: 4px solid var(--warning);
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 12px;
+        }
+
+        .rule-punishment strong {
+            color: var(--warning);
+        }
+
+        .rule-title-highlighted {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(52, 152, 219, 0.05));
+            border-left: 3px solid var(--accent);
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin: 8px 0;
+            font-size: 0.95em;
+        }
+
+        mark {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #000;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(255, 215, 0, 0.3);
+        }
+
+        .zones-map-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .zones-map-section h3 {
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .map-container {
+            text-align: center;
+        }
+
+        .zones-map {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .zones-map:hover {
+            transform: scale(1.02);
+        }
+
+        .map-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-tertiary);
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid var(--border);
+        }
+
+        .legend-color.green {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+
+        .legend-color.red {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .legend-color.grey {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        }
+
+        @media (max-width: 768px) {
+            .map-legend {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+        }
+
+        .zones-info {
+            max-width: 100%;
+        }
+
+        .zone-info-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 4px 16px var(--shadow);
+        }
+
+        .zone-info-card.green-zone {
+            border-left: 4px solid #2ecc71;
+        }
+
+        .zone-info-card.red-zone {
+            border-left: 4px solid #e74c3c;
+        }
+
+        .zone-info-card.grey-zone {
+            border-left: 4px solid #95a5a6;
+        }
+
+        .zone-info-card h4 {
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .zone-info-card p {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+
+        .zone-info-card ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .zone-info-card li {
+            margin: 5px 0;
+            line-height: 1.5;
+        }
+
+        .rule-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .status-bar {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 30px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            bottom: 20px;
+            box-shadow: 0 4px 16px var(--shadow);
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            color: var(--accent);
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top: 2px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: rgba(248, 81, 73, 0.1);
+            border: 1px solid var(--warning);
+            color: var(--warning);
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+        }
+
+        .success {
+            background: rgba(35, 134, 54, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+        }
+
+
+        @media (max-width: 768px) {
+            .main-content {
+                gap: 20px;
+            }
+
+            .container {
+                padding: 10px;
+            }
+
+
+            .search-panel {
+                padding: 20px;
+            }
+
+            .rule-actions {
+                margin-left: 0;
+                justify-content: flex-end;
+                margin-top: 12px;
+                width: 100%;
+            }
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .no-results .emoji {
+            font-size: 3em;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="main-content">
+            <div class="search-panel" style="grid-column: 1 / -1; max-width: 800px; margin: 0 auto;">
+                <h2 class="panel-title">
+                    🔍 Поиск по правилам
+                </h2>
+
+                <div class="input-group">
+                    <label for="question-input">Задайте вопрос о правилах:</label>
+                    <input 
+                        type="text" 
+                        id="question-input" 
+                        class="form-input" 
+                        placeholder="Например: 'Какие наказания за изъятие предметов?'"
+                        onkeypress="handleKeyPress(event)"
+                    >
+                </div>
+
+                <button id="search-btn" class="btn" onclick="searchRules()">
+                    🔍 Найти ответ
+                </button>
+
+                <div class="examples">
+                    <h4>Популярные вопросы:</h4>
+                    <div class="example-buttons">
+                        <button class="example-btn" onclick="setQuestion('правила изъятия нелегальных предметов')">
+                            Изъятие предметов
+                        </button>
+                        <button class="example-btn" onclick="setQuestion('наказание за повышение более чем на 1 ранг')">
+                            Повышение рангов
+                        </button>
+                        <button class="example-btn" onclick="setQuestion('требования к форме одежды')">
+                            Форма одежды
+                        </button>
+                        <button class="example-btn" onclick="setQuestion('правила дисциплины сотрудников')">
+                            Дисциплина
+                        </button>
+                        <button class="example-btn" onclick="setQuestion('взаимодействие с гражданами')">
+                            С гражданами
+                        </button>
+                        <button class="example-btn" onclick="setQuestion('какие есть виды зон')">
+                            Игровые зоны
+                        </button>
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-top: 20px;">
+                    <label for="category-filter">Фильтр по категории:</label>
+                    <select id="category-filter" class="form-select" onchange="filterByCategory()">
+                        <option value="all">Все категории</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-secondary" onclick="showAllRules()" style="margin-top: 12px; width: 100%;">
+                    📋 Показать все правила
+                </button>
+
+                <div class="zones-map-section" style="margin-top: 30px;">
+                    <h3>🗺️ Карта игровых зон</h3>
+                    <div class="map-container">
+                        <img src="https://forum.majestic-rp.ru/proxy.php?image=https%3A%2F%2Fi.yapx.cc%2FYZVCC.jpg&hash=110157eed322d25e2e6bccb8e2206276" 
+                             alt="Карта игровых зон Majestic RP" 
+                             class="zones-map"
+                             onclick="showZonesInfo()">
+                        <div class="map-legend">
+                            <div class="legend-item">
+                                <div class="legend-color green"></div>
+                                <span>Green Zone - безопасные территории</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color red"></div>
+                                <span>Red Zone - криминальные территории</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color grey"></div>
+                                <span>Grey Zone - нейтральные территории</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="results-section" class="results-section">
+            <div id="results-content">
+                <!-- Результаты поиска будут отображаться здесь -->
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-dot"></div>
+            <span id="status-text">Инициализация системы...</span>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
