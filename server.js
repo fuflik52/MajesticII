@@ -66,6 +66,10 @@ let rules = [];
 
 function loadRules() {
     console.log('🔄 Начинаем загрузку правил...');
+    console.log(`📁 Ищем файл: ${DATA_FILE}`);
+    console.log(`📁 Текущая директория: ${process.cwd()}`);
+    console.log(`📁 Содержимое директории:`, fs.readdirSync('.'));
+    
     try {
         if (fs.existsSync(DATA_FILE)) {
             console.log(`📄 Найден файл правил: ${DATA_FILE}`);
@@ -81,6 +85,7 @@ function loadRules() {
             }
         } else {
             console.log(`⚠️ Файл ${DATA_FILE} не найден, загружаем демо-правила`);
+            console.log(`📁 Доступные файлы:`, fs.readdirSync('.'));
             // Загружаем демо-правила если файла нет
             loadDemoRules();
         }

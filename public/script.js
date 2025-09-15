@@ -20,6 +20,7 @@ function generateSessionId() {
             console.log('🆕 Создан новый session ID:', sessionId.substring(0, 20) + '...');
         }
     }
+    console.log('🆔 Используем session ID:', sessionId.substring(0, 20) + '...');
     return sessionId;
 }
 
@@ -35,6 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Проверка статуса сервера
 async function checkServerStatus() {
     try {
+        console.log('🔍 Проверяем статус сервера...');
         const response = await fetch('/api/status', {
             headers: {
                 'X-Session-ID': generateSessionId()
@@ -42,27 +44,34 @@ async function checkServerStatus() {
         });
         const data = await response.json();
         
+        console.log('📊 Ответ сервера:', data);
+        
         if (data.status === 'ready') {
             document.getElementById('status-text').textContent = 
                 `Система готова | Загружено ${data.rulesCount} правил`;
+            console.log(`✅ Сервер готов, загружено ${data.rulesCount} правил`);
         } else {
             document.getElementById('status-text').textContent = 'Система инициализируется...';
+            console.log('⏳ Сервер инициализируется...');
         }
     } catch (error) {
         document.getElementById('status-text').textContent = 'Сервер недоступен';
-        console.error('Ошибка проверки статуса:', error);
+        console.error('❌ Ошибка проверки статуса:', error);
     }
 }
 
 // Обновление статистики пользователей
 async function updateUserStats() {
     try {
+        console.log('👥 Обновляем статистику пользователей...');
         const response = await fetch('/api/users/stats', {
             headers: {
                 'X-Session-ID': generateSessionId()
             }
         });
         const data = await response.json();
+        
+        console.log('👥 Статистика пользователей:', data);
         
         const userIdElement = document.getElementById('user-id');
         const userOnlineElement = document.getElementById('user-online');
@@ -71,12 +80,15 @@ async function updateUserStats() {
             // Отображаем ID пользователя
             if (data.userNumber > 0) {
                 userIdElement.textContent = `#${data.userNumber}`;
+                console.log(`👤 Ваш ID пользователя: #${data.userNumber}`);
             } else {
                 userIdElement.textContent = '#0';
+                console.log('👤 ID пользователя не определен');
             }
             
             // Отображаем количество онлайн пользователей
             userOnlineElement.textContent = `${data.activeUsers} онлайн`;
+            console.log(`🟢 Активных пользователей: ${data.activeUsers}`);
             
             // Подсвечиваем зеленым если есть активные пользователи
             if (data.activeUsers > 0) {
@@ -86,7 +98,7 @@ async function updateUserStats() {
             }
         }
     } catch (error) {
-        console.error('Ошибка обновления статистики пользователей:', error);
+        console.error('❌ Ошибка обновления статистики пользователей:', error);
     }
 }
 
