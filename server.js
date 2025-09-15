@@ -3,6 +3,7 @@ const cors = require('cors');
 const fs = require('fs-extra');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
+const allRulesData = require('./rules_data');
 
 const app = express();
 const PORT = 5000;
@@ -68,9 +69,9 @@ function loadRules() {
     console.log('🔄 Начинаем загрузку правил...');
     console.log(`📁 Ищем файл: ${DATA_FILE}`);
     console.log(`📁 Текущая директория: ${process.cwd()}`);
-    console.log(`📁 Содержимое директории:`, fs.readdirSync('.'));
     
     try {
+        // Сначала пытаемся загрузить из файла
         if (fs.existsSync(DATA_FILE)) {
             console.log(`📄 Найден файл правил: ${DATA_FILE}`);
             const data = fs.readFileSync(DATA_FILE, 'utf8');
@@ -78,22 +79,36 @@ function loadRules() {
             rules = JSON.parse(data);
             console.log(`📚 Успешно загружено ${rules.length} правил из ${DATA_FILE}`);
             
-            // Если файл пустой или содержит пустой массив, загружаем демо-правила
+            // Если файл пустой или содержит пустой массив, загружаем полные правила
             if (!rules || rules.length === 0) {
-                console.log(`⚠️ Файл ${DATA_FILE} пустой, загружаем демо-правила`);
-                loadDemoRules();
+                console.log(`⚠️ Файл ${DATA_FILE} пустой, загружаем полные правила`);
+                loadFullRules();
             }
         } else {
-            console.log(`⚠️ Файл ${DATA_FILE} не найден, загружаем демо-правила`);
-            console.log(`📁 Доступные файлы:`, fs.readdirSync('.'));
-            // Загружаем демо-правила если файла нет
-            loadDemoRules();
+            console.log(`⚠️ Файл ${DATA_FILE} не найден, загружаем полные правила`);
+            loadFullRules();
         }
     } catch (error) {
         console.error('❌ Ошибка загрузки правил:', error);
         console.error('❌ Детали ошибки:', error.message);
-        console.log('🔄 Переходим к загрузке демо-правил...');
-        loadDemoRules();
+        console.log('🔄 Переходим к загрузке полных правил...');
+        loadFullRules();
+    }
+}
+
+function loadFullRules() {
+    console.log('📥 Загружаем полные правила...');
+    try {
+        // Загружаем все правила напрямую из кода
+        rules = getAllRules();
+        console.log(`✅ Загружено ${rules.length} полных правил`);
+        saveRules();
+    } catch (error) {
+        console.error('❌ Ошибка загрузки полных правил:', error);
+        console.error('❌ Детали ошибки:', error.message);
+        console.log('🏭 Создаем базовые правила как fallback');
+        rules = createDefaultRules();
+        saveRules();
     }
 }
 
@@ -234,6 +249,10 @@ function createDefaultRules() {
             created: new Date().toISOString()
         }
     ];
+}
+
+function getAllRules() {
+    return allRulesData;
 }
 
 function saveRules() {
