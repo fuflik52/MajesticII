@@ -93,14 +93,8 @@
             color: var(--text-secondary);
         }
 
-        .user-counter-pulse {
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
+        .user-counter-online {
+            color: var(--success);
         }
 
         /* Адаптивность для счетчика */
@@ -614,10 +608,10 @@
 <body>
     <!-- Счетчик пользователей -->
     <div class="user-counter" id="user-counter">
-        <div class="user-counter-icon">👥</div>
+        <div class="user-counter-icon">👤</div>
         <div class="user-counter-text">
-            <div class="user-counter-main" id="user-count">0</div>
-            <div class="user-counter-sub" id="user-status">пользователей</div>
+            <div class="user-counter-main" id="user-id">#0</div>
+            <div class="user-counter-sub" id="user-online">0 онлайн</div>
         </div>
     </div>
 

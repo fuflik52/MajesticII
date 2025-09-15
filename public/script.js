@@ -54,19 +54,25 @@ async function updateUserStats() {
         });
         const data = await response.json();
         
-        const userCountElement = document.getElementById('user-count');
-        const userStatusElement = document.getElementById('user-status');
-        const userCounterElement = document.getElementById('user-counter');
+        const userIdElement = document.getElementById('user-id');
+        const userOnlineElement = document.getElementById('user-online');
         
-        if (userCountElement && userStatusElement) {
-            userCountElement.textContent = data.totalUsers;
-            
-            if (data.activeUsers > 0) {
-                userStatusElement.textContent = `${data.activeUsers} онлайн`;
-                userCounterElement.classList.add('user-counter-pulse');
+        if (userIdElement && userOnlineElement) {
+            // Отображаем ID пользователя
+            if (data.userNumber > 0) {
+                userIdElement.textContent = `#${data.userNumber}`;
             } else {
-                userStatusElement.textContent = 'пользователей';
-                userCounterElement.classList.remove('user-counter-pulse');
+                userIdElement.textContent = '#0';
+            }
+            
+            // Отображаем количество онлайн пользователей
+            userOnlineElement.textContent = `${data.activeUsers} онлайн`;
+            
+            // Подсвечиваем зеленым если есть активные пользователи
+            if (data.activeUsers > 0) {
+                userOnlineElement.classList.add('user-counter-online');
+            } else {
+                userOnlineElement.classList.remove('user-counter-online');
             }
         }
     } catch (error) {

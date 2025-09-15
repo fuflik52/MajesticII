@@ -368,9 +368,24 @@ app.get('/api/status', (req, res) => {
 app.get('/api/users/stats', (req, res) => {
     const now = Date.now();
     const activeThreshold = 5 * 60 * 1000; // 5 минут
+    const sessionId = req.headers['x-session-id'] || req.query.sessionId;
     
     // Подсчитываем активных пользователей (были активны в последние 5 минут)
     let activeUsers = 0;
+    let currentUserId = null;
+    let userNumber = 0;
+    
+    // Находим номер текущего пользователя
+    if (sessionId && userSessions.has(sessionId)) {
+        const currentSession = userSessions.get(sessionId);
+        currentUserId = currentSession.userId;
+        
+        // Подсчитываем номер пользователя (порядок регистрации)
+        const usersArray = Array.from(users);
+        userNumber = usersArray.indexOf(currentUserId) + 1;
+    }
+    
+    // Подсчитываем активных пользователей
     for (const [sessionId, session] of userSessions) {
         if (now - session.lastSeen < activeThreshold) {
             activeUsers++;
@@ -381,6 +396,8 @@ app.get('/api/users/stats', (req, res) => {
         totalUsers: users.size,
         activeUsers: activeUsers,
         totalSessions: userSessions.size,
+        currentUserId: currentUserId,
+        userNumber: userNumber,
         timestamp: new Date().toISOString()
     });
 });
