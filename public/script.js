@@ -31,7 +31,26 @@ document.addEventListener('DOMContentLoaded', function() {
     loadCategories();
     startAutoUpdate();
     startUserStatsUpdate();
+    initScrollEffects();
 });
+
+// Инициализация эффектов прокрутки
+function initScrollEffects() {
+    const statusBar = document.querySelector('.status-bar');
+    let isScrolled = false;
+    
+    window.addEventListener('scroll', function() {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        
+        if (scrollTop > 100 && !isScrolled) {
+            statusBar.classList.add('show');
+            isScrolled = true;
+        } else if (scrollTop <= 100 && isScrolled) {
+            statusBar.classList.remove('show');
+            isScrolled = false;
+        }
+    });
+}
 
 // Проверка статуса сервера
 async function checkServerStatus() {
@@ -74,9 +93,8 @@ async function updateUserStats() {
         console.log('👥 Статистика пользователей:', data);
         
         const userIdElement = document.getElementById('user-id');
-        const userOnlineElement = document.getElementById('user-online');
         
-        if (userIdElement && userOnlineElement) {
+        if (userIdElement) {
             // Отображаем ID пользователя
             if (data.userNumber > 0) {
                 userIdElement.textContent = `#${data.userNumber}`;
@@ -84,17 +102,6 @@ async function updateUserStats() {
             } else {
                 userIdElement.textContent = '#0';
                 console.log('👤 ID пользователя не определен');
-            }
-            
-            // Отображаем количество онлайн пользователей
-            userOnlineElement.textContent = `${data.activeUsers} онлайн`;
-            console.log(`🟢 Активных пользователей: ${data.activeUsers}`);
-            
-            // Подсвечиваем зеленым если есть активные пользователи
-            if (data.activeUsers > 0) {
-                userOnlineElement.classList.add('user-counter-online');
-            } else {
-                userOnlineElement.classList.remove('user-counter-online');
             }
         }
     } catch (error) {

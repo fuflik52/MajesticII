@@ -12,17 +12,20 @@
         }
 
         :root {
-            --bg-primary: #0d1117;
-            --bg-secondary: #161b22;
-            --bg-tertiary: #21262d;
-            --text-primary: #c9d1d9;
-            --text-secondary: #8b949e;
-            --accent: #58a6ff;
-            --accent-hover: #79c0ff;
-            --success: #238636;
-            --warning: #f85149;
-            --border: #30363d;
-            --shadow: rgba(0, 0, 0, 0.3);
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #2a2a2a;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --accent: #00d4ff;
+            --accent-hover: #00b8e6;
+            --success: #00ff88;
+            --warning: #ff4757;
+            --border: #333333;
+            --shadow: rgba(0, 0, 0, 0.5);
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
         }
 
         body {
@@ -30,6 +33,64 @@
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Анимированный фон */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+            animation: backgroundShift 20s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes backgroundShift {
+            0%, 100% { 
+                transform: translateX(0) translateY(0) scale(1);
+                opacity: 0.8;
+            }
+            33% { 
+                transform: translateX(-20px) translateY(-10px) scale(1.1);
+                opacity: 0.6;
+            }
+            66% { 
+                transform: translateX(20px) translateY(10px) scale(0.9);
+                opacity: 0.7;
+            }
+        }
+
+        /* Плавающие частицы */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(2px 2px at 20px 30px, rgba(255, 255, 255, 0.1), transparent),
+                radial-gradient(2px 2px at 40px 70px, rgba(0, 212, 255, 0.2), transparent),
+                radial-gradient(1px 1px at 90px 40px, rgba(255, 255, 255, 0.1), transparent),
+                radial-gradient(1px 1px at 130px 80px, rgba(0, 255, 136, 0.2), transparent),
+                radial-gradient(2px 2px at 160px 30px, rgba(255, 119, 198, 0.2), transparent);
+            background-repeat: repeat;
+            background-size: 200px 100px;
+            animation: particleFloat 15s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes particleFloat {
+            0% { transform: translateY(0) translateX(0); }
+            100% { transform: translateY(-100px) translateX(50px); }
         }
 
         .container {
@@ -44,57 +105,56 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 12px 16px;
-            box-shadow: 0 4px 16px var(--shadow);
+            background: rgba(26, 26, 26, 0.8);
+            border-radius: 50px;
+            padding: 8px 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             z-index: 1000;
             display: flex;
             align-items: center;
             gap: 8px;
             font-size: 14px;
             color: var(--text-primary);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(20px);
             transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .user-counter:hover {
-            background: var(--bg-tertiary);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px var(--shadow);
+            background: rgba(42, 42, 42, 0.9);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
         }
 
         .user-counter-icon {
-            width: 20px;
-            height: 20px;
-            background: var(--accent);
+            width: 24px;
+            height: 24px;
+            background: var(--gradient-3);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: 14px;
             color: white;
+            animation: iconPulse 2s ease-in-out infinite;
         }
 
-        .user-counter-text {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
+        @keyframes iconPulse {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.4);
+            }
+            50% { 
+                transform: scale(1.1);
+                box-shadow: 0 0 0 8px rgba(0, 212, 255, 0);
+            }
         }
 
         .user-counter-main {
-            font-weight: 600;
+            font-weight: 700;
             color: var(--text-primary);
-        }
-
-        .user-counter-sub {
-            font-size: 11px;
-            color: var(--text-secondary);
-        }
-
-        .user-counter-online {
-            color: var(--success);
+            font-size: 16px;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
         }
 
         /* Адаптивность для счетчика */
@@ -102,14 +162,18 @@
             .user-counter {
                 top: 10px;
                 right: 10px;
-                padding: 8px 12px;
+                padding: 6px 12px;
                 font-size: 12px;
             }
             
             .user-counter-icon {
-                width: 16px;
-                height: 16px;
-                font-size: 10px;
+                width: 20px;
+                height: 20px;
+                font-size: 12px;
+            }
+            
+            .user-counter-main {
+                font-size: 14px;
             }
         }
 
@@ -122,21 +186,67 @@
         }
 
         .search-panel {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 4px 16px var(--shadow);
+            background: rgba(26, 26, 26, 0.8);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+            animation: panelGlow 3s ease-in-out infinite;
+        }
+
+        .search-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes panelGlow {
+            0%, 100% { 
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(0, 212, 255, 0.1);
+            }
+            50% { 
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 212, 255, 0.2);
+            }
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
         }
 
         .panel-title {
-            font-size: 1.5em;
-            margin-bottom: 20px;
+            font-size: 2.5em;
+            margin-bottom: 30px;
             color: var(--text-primary);
-            font-weight: 600;
+            font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
+            text-align: center;
+            justify-content: center;
+            background: var(--gradient-3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: titleGlow 2s ease-in-out infinite alternate;
+            text-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+        }
+
+        @keyframes titleGlow {
+            0% { 
+                filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.3));
+            }
+            100% { 
+                filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.6));
+            }
         }
 
         .input-group {
@@ -152,19 +262,27 @@
 
         .form-input, .form-select, .form-textarea {
             width: 100%;
-            padding: 12px 16px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
+            padding: 16px 20px;
+            background: rgba(42, 42, 42, 0.8);
+            border: 2px solid rgba(0, 212, 255, 0.2);
+            border-radius: 15px;
             color: var(--text-primary);
             font-size: 14px;
             transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            position: relative;
         }
 
         .form-input:focus, .form-select:focus, .form-textarea:focus {
             outline: none;
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+            box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.1), 0 0 20px rgba(0, 212, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .form-input::placeholder, .form-textarea::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.7;
         }
 
         .form-textarea {
@@ -173,24 +291,46 @@
         }
 
         .btn {
-            background: var(--accent);
+            background: var(--gradient-3);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
+            padding: 14px 28px;
+            border-radius: 50px;
             cursor: pointer;
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 600;
             transition: all 0.3s ease;
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
         }
 
         .btn:hover {
-            background: var(--accent-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(88, 166, 255, 0.3);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0) scale(0.98);
         }
 
         .btn:disabled {
@@ -500,31 +640,82 @@
         }
 
         .status-bar {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 16px;
+            background: rgba(26, 26, 26, 0.9);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 50px;
+            padding: 12px 20px;
             margin-top: 30px;
-            display: flex;
+            display: none;
             align-items: center;
             gap: 12px;
-            position: sticky;
+            position: fixed;
             bottom: 20px;
-            box-shadow: 0 4px 16px var(--shadow);
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .status-bar.show {
+            display: flex;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
         }
 
         .status-dot {
-            width: 12px;
-            height: 12px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
-            background: var(--success);
-            animation: pulse 2s infinite;
+            background: var(--gradient-3);
+            animation: statusPulse 2s infinite;
+            position: relative;
         }
 
+        .status-dot::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border-radius: 50%;
+            background: var(--gradient-3);
+            opacity: 0.3;
+            animation: statusRipple 2s infinite;
+        }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        @keyframes statusPulse {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.4);
+            }
+            50% { 
+                transform: scale(1.2);
+                box-shadow: 0 0 0 8px rgba(0, 212, 255, 0);
+            }
+        }
+
+        @keyframes statusRipple {
+            0% {
+                transform: scale(0.8);
+                opacity: 0.3;
+            }
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
         }
 
         .loading {
@@ -608,11 +799,13 @@
 <body>
     <!-- Счетчик пользователей -->
     <div class="user-counter" id="user-counter">
-        <div class="user-counter-icon">👤</div>
-        <div class="user-counter-text">
-            <div class="user-counter-main" id="user-id">#0</div>
-            <div class="user-counter-sub" id="user-online">0 онлайн</div>
+        <div class="user-counter-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z" fill="currentColor"/>
+                <path d="M12 14C7.58172 14 4 17.5817 4 22H20C20 17.5817 16.4183 14 12 14Z" fill="currentColor"/>
+            </svg>
         </div>
+        <div class="user-counter-main" id="user-id">#0</div>
     </div>
 
     <div class="container">
@@ -620,7 +813,8 @@
         <div class="main-content">
             <div class="search-panel" style="grid-column: 1 / -1; max-width: 800px; margin: 0 auto;">
                 <h2 class="panel-title">
-                    🔍 Поиск по правилам
+                    <span>🔍</span>
+                    <span>Поиск по правилам</span>
                 </h2>
 
                 <div class="input-group">
@@ -638,29 +832,6 @@
                     🔍 Найти ответ
                 </button>
 
-                <div class="examples">
-                    <h4>Популярные вопросы:</h4>
-                    <div class="example-buttons">
-                        <button class="example-btn" onclick="setQuestion('правила изъятия нелегальных предметов')">
-                            Изъятие предметов
-                        </button>
-                        <button class="example-btn" onclick="setQuestion('наказание за повышение более чем на 1 ранг')">
-                            Повышение рангов
-                        </button>
-                        <button class="example-btn" onclick="setQuestion('требования к форме одежды')">
-                            Форма одежды
-                        </button>
-                        <button class="example-btn" onclick="setQuestion('правила дисциплины сотрудников')">
-                            Дисциплина
-                        </button>
-                        <button class="example-btn" onclick="setQuestion('взаимодействие с гражданами')">
-                            С гражданами
-                        </button>
-                        <button class="example-btn" onclick="setQuestion('какие есть виды зон')">
-                            Игровые зоны
-                        </button>
-                    </div>
-                </div>
 
                 <div class="input-group" style="margin-top: 20px;">
                     <label for="category-filter">Фильтр по категории:</label>
