@@ -7,11 +7,68 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 const PORT = 5000;
 const DATA_FILE = 'rules.json';
+const USERS_FILE = 'users.json';
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
+
+// Система отслеживания пользователей
+let users = new Set();
+let userSessions = new Map(); // sessionId -> { userId, lastSeen, userAgent }
+
+// Загружаем сохраненных пользователей
+function loadUsers() {
+    try {
+        if (fs.existsSync(USERS_FILE)) {
+            const data = fs.readFileSync(USERS_FILE, 'utf8');
+            const savedUsers = JSON.parse(data);
+            users = new Set(savedUsers);
+            console.log(`👥 Загружено ${users.size} уникальных пользователей`);
+        }
+    } catch (error) {
+        console.error('❌ Ошибка загрузки пользователей:', error);
+    }
+}
+
+// Сохраняем пользователей
+function saveUsers() {
+    try {
+        const usersArray = Array.from(users);
+        fs.writeFileSync(USERS_FILE, JSON.stringify(usersArray, null, 2));
+    } catch (error) {
+        console.error('❌ Ошибка сохранения пользователей:', error);
+    }
+}
+
+// Middleware для отслеживания пользователей
+app.use((req, res, next) => {
+    const sessionId = req.headers['x-session-id'] || req.query.sessionId;
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    
+    if (sessionId) {
+        // Обновляем время последней активности
+        if (userSessions.has(sessionId)) {
+            const session = userSessions.get(sessionId);
+            session.lastSeen = Date.now();
+            session.userAgent = userAgent;
+        } else {
+            // Новый пользователь
+            const userId = uuidv4();
+            users.add(userId);
+            userSessions.set(sessionId, {
+                userId: userId,
+                lastSeen: Date.now(),
+                userAgent: userAgent
+            });
+            saveUsers();
+            console.log(`👤 Новый пользователь: ${userId.substring(0, 8)}...`);
+        }
+    }
+    
+    next();
+});
 
 
 // Загружаем правила из файла
@@ -301,7 +358,30 @@ app.get('/api/status', (req, res) => {
         status: 'ready',
         message: 'Система готова к работе',
         rulesCount: rules.length,
+        usersCount: users.size,
+        activeSessions: userSessions.size,
         version: '2.0.0'
+    });
+});
+
+// API для получения статистики пользователей
+app.get('/api/users/stats', (req, res) => {
+    const now = Date.now();
+    const activeThreshold = 5 * 60 * 1000; // 5 минут
+    
+    // Подсчитываем активных пользователей (были активны в последние 5 минут)
+    let activeUsers = 0;
+    for (const [sessionId, session] of userSessions) {
+        if (now - session.lastSeen < activeThreshold) {
+            activeUsers++;
+        }
+    }
+    
+    res.json({
+        totalUsers: users.size,
+        activeUsers: activeUsers,
+        totalSessions: userSessions.size,
+        timestamp: new Date().toISOString()
     });
 });
 
@@ -380,6 +460,7 @@ app.get('/api/categories', (req, res) => {
 
 // Инициализация
 loadRules();
+loadUsers();
 
 // Запуск сервера
 app.listen(PORT, () => {

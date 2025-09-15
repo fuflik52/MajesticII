@@ -1,18 +1,35 @@
 // Глобальные переменные
 let isLoading = false;
 let autoUpdateInterval = null;
+let userStatsInterval = null;
+let sessionId = null;
+
+// Генерация уникального ID сессии
+function generateSessionId() {
+    if (!sessionId) {
+        sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('majestic_session_id', sessionId);
+    }
+    return sessionId;
+}
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
+    generateSessionId();
     checkServerStatus();
     loadCategories();
     startAutoUpdate();
+    startUserStatsUpdate();
 });
 
 // Проверка статуса сервера
 async function checkServerStatus() {
     try {
-        const response = await fetch('/api/status');
+        const response = await fetch('/api/status', {
+            headers: {
+                'X-Session-ID': generateSessionId()
+            }
+        });
         const data = await response.json();
         
         if (data.status === 'ready') {
@@ -25,6 +42,45 @@ async function checkServerStatus() {
         document.getElementById('status-text').textContent = 'Сервер недоступен';
         console.error('Ошибка проверки статуса:', error);
     }
+}
+
+// Обновление статистики пользователей
+async function updateUserStats() {
+    try {
+        const response = await fetch('/api/users/stats', {
+            headers: {
+                'X-Session-ID': generateSessionId()
+            }
+        });
+        const data = await response.json();
+        
+        const userCountElement = document.getElementById('user-count');
+        const userStatusElement = document.getElementById('user-status');
+        const userCounterElement = document.getElementById('user-counter');
+        
+        if (userCountElement && userStatusElement) {
+            userCountElement.textContent = data.totalUsers;
+            
+            if (data.activeUsers > 0) {
+                userStatusElement.textContent = `${data.activeUsers} онлайн`;
+                userCounterElement.classList.add('user-counter-pulse');
+            } else {
+                userStatusElement.textContent = 'пользователей';
+                userCounterElement.classList.remove('user-counter-pulse');
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка обновления статистики пользователей:', error);
+    }
+}
+
+// Запуск автоматического обновления статистики пользователей
+function startUserStatsUpdate() {
+    // Обновляем сразу
+    updateUserStats();
+    
+    // Затем каждые 10 секунд
+    userStatsInterval = setInterval(updateUserStats, 10000);
 }
 
 // Загрузка категорий
@@ -82,6 +138,7 @@ async function searchRules() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-Session-ID': generateSessionId()
             },
             body: JSON.stringify({ question: question }),
         });
@@ -282,8 +339,8 @@ function startAutoUpdate() {
     autoUpdateInterval = setInterval(async () => {
         try {
             const response = await fetch('/api/status');
-            const data = await response.json();
-            
+        const data = await response.json();
+        
             if (data.status === 'ready') {
                 const currentRulesCount = parseInt(document.getElementById('status-text').textContent.match(/\d+/)?.[0] || '0');
                 
